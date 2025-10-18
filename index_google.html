@@ -55,11 +55,16 @@
         <h2>Translated Text (to English):</h2>
         <p id="translatedText"></p>
     </div>
+    <div class="text-container">
+        <h2>Translated Text (to Arabic):</h2>
+        <p id="translatedArabicText"></p>
+    </div>
 
     <script>
         const startButton = document.getElementById('startButton');
         const originalText = document.getElementById('originalText');
         const translatedText = document.getElementById('translatedText');
+        const translatedArabicText = document.getElementById('translatedArabicText');
         const languageSelect = document.getElementById('language');
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -85,6 +90,7 @@
                     recognition.lang = languageSelect.value;
                     originalText.textContent = '';
                     translatedText.textContent = '';
+                    translatedArabicText.textContent = '';
                     recognition.start();
                 } else {
                     startButton.textContent = 'Start Session';
@@ -118,6 +124,7 @@
 
             if (googleApiKey === "YOUR_GOOGLE_CLOUD_TRANSLATION_API_KEY") {
                 translatedText.textContent = "ERROR: Please replace 'YOUR_GOOGLE_CLOUD_TRANSLATION_API_KEY' with your actual Google Cloud Translation API key.";
+                translatedArabicText.textContent = "ERROR: Please replace 'YOUR_GOOGLE_CLOUD_TRANSLATION_API_KEY' with your actual Google Cloud Translation API key.";
                 return;
             }
 
@@ -152,6 +159,37 @@
             .catch(error => {
                 console.error('English translation error:', error);
                 translatedText.textContent = `Translation Error: ${error.message}`;
+            });
+
+            // Translate to Arabic
+            fetch(apiUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                    q: text,
+                    source: sourceLanguage,
+                    target: "ar"
+                }),
+                headers: { "Content-Type": "application/json" }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Try to parse error message from Google API
+                    return response.json().then(json => {
+                        throw new Error(`Google API Error: ${json.error.message || response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.data && data.data.translations && data.data.translations.length > 0) {
+                    translatedArabicText.textContent = data.data.translations[0].translatedText;
+                } else {
+                    translatedArabicText.textContent = "Translation failed (no text).";
+                }
+            })
+            .catch(error => {
+                console.error('Arabic translation error:', error);
+                translatedArabicText.textContent = `Translation Error: ${error.message}`;
             });
         }
     </script>
